@@ -1,3 +1,37 @@
+# 1.4.17
+
+* Handle w:num with invalid w:abstractNumId.
+* Update underscore to 1.13.1.
+
+# 1.4.16
+
+* Convert symbols in supported fonts to corresponding Unicode characters.
+
+# 1.4.15
+
+* Support numbering defined by paragraph style.
+
+# 1.4.14
+
+* Add style mapping for all caps.
+
+# 1.4.13
+
+* Use package-lock.json instead of npm-shrinkwrap.json.
+
+# 1.4.12
+
+* Handle underline elements where w:val is "none".
+
+# 1.4.11
+
+* Re-publishing to remove superfluous files.
+
+# 1.4.10
+
+* Read font size for runs.
+* Support soft hyphens.
+
 # 1.4.9
 
 * Allow hyperlinks to be collapsed.
