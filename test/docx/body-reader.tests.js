@@ -246,7 +246,7 @@ test("complex fields", (function() {
     function isHyperlinkedRun(hyperlinkProperties) {
         return isRun({
             children: contains(
-                isHyperlink(_.extend({href: uri}, hyperlinkProperties))
+                isHyperlink(hyperlinkProperties)
             )
         });
     }
@@ -257,7 +257,7 @@ test("complex fields", (function() {
             assert.deepEqual(instrText, []);
         },
 
-        "runs in a complex field for hyperlinks are read as hyperlinks": function() {
+        "runs in a complex field for hyperlink without switch are read as external hyperlinks": function() {
             var hyperlinkRunXml = runOfText("this is a hyperlink");
             var paragraphXml = new XmlElement("w:p", {}, [
                 beginXml,
@@ -272,6 +272,33 @@ test("complex fields", (function() {
                 isEmptyRun,
                 isEmptyHyperlinkedRun,
                 isHyperlinkedRun({
+                    href: uri,
+                    children: contains(
+                        isText("this is a hyperlink")
+                    )
+                }),
+                isEmptyRun
+            ));
+        },
+
+        "runs in a complex field for hyperlink with l switch are read as internal hyperlinks": function() {
+            var hyperlinkRunXml = runOfText("this is a hyperlink");
+            var paragraphXml = new XmlElement("w:p", {}, [
+                beginXml,
+                new XmlElement("w:instrText", {}, [
+                    xml.text(' HYPERLINK \\l "InternalLink"')
+                ]),
+                separateXml,
+                hyperlinkRunXml,
+                endXml
+            ]);
+            var paragraph = readXmlElementValue(paragraphXml);
+
+            assertThat(paragraph.children, contains(
+                isEmptyRun,
+                isEmptyHyperlinkedRun,
+                isHyperlinkedRun({
+                    anchor: "InternalLink",
                     children: contains(
                         isText("this is a hyperlink")
                     )
@@ -324,6 +351,7 @@ test("complex fields", (function() {
                 isEmptyRun,
                 isEmptyHyperlinkedRun,
                 isHyperlinkedRun({
+                    href: uri,
                     children: contains(
                         isText("this is a hyperlink")
                     )
@@ -356,6 +384,7 @@ test("complex fields", (function() {
                 isEmptyHyperlinkedRun,
                 isEmptyHyperlinkedRun,
                 isHyperlinkedRun({
+                    href: uri,
                     children: contains(
                         isText("this is a hyperlink")
                     )
@@ -387,6 +416,7 @@ test("complex fields", (function() {
                 isEmptyHyperlinkedRun,
                 isEmptyHyperlinkedRun,
                 isHyperlinkedRun({
+                    href: uri,
                     children: contains(
                         isText("John Doe")
                     )
@@ -415,6 +445,7 @@ test("complex fields", (function() {
                 isEmptyHyperlinkedRun,
                 isEmptyHyperlinkedRun,
                 isHyperlinkedRun({
+                    href: uri,
                     children: contains(
                         isText("this is a hyperlink")
                     )
@@ -481,11 +512,11 @@ test("isUnderline is false if underline element is not present", function() {
     assert.deepEqual(run.isUnderline, false);
 });
 
-test("isUnderline is true if underline element is present without w:val attribute", function() {
+test("isUnderline is false if underline element is present without w:val attribute", function() {
     var underlineXml = new XmlElement("w:u");
     var runXml = runWithProperties([underlineXml]);
     var run = readXmlElementValue(runXml);
-    assert.equal(run.isUnderline, true);
+    assert.equal(run.isUnderline, false);
 });
 
 test("isUnderline is false if underline element is present and w:val is false", function() {
@@ -509,7 +540,7 @@ test("isUnderline is false if underline element is present and w:val is none", f
     assert.equal(run.isUnderline, false);
 });
 
-test("isUnderline is false if underline element is present and w:val is not none or falsy", function() {
+test("isUnderline is true if underline element is present and w:val is not none or falsy", function() {
     var underlineXml = new XmlElement("w:u", {"w:val": "single"});
     var runXml = runWithProperties([underlineXml]);
     var run = readXmlElementValue(runXml);
@@ -1054,6 +1085,18 @@ test("can read linked pictures", function() {
         contentType: "image/png",
         buffer: IMAGE_BUFFER
     }));
+});
+
+test("warning if blip has no image file", function() {
+    var drawing = createInlineImage({
+        blip: new XmlElement("a:blip"),
+        description: "It's a hat"
+    });
+
+    var result = readXmlElement(drawing);
+
+    assert.deepEqual(result.messages, [warning("Could not find image file for a:blip element")]);
+    assert.deepEqual(result.value, []);
 });
 
 test("warning if unsupported image type", function() {
